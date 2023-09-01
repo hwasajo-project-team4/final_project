@@ -12,7 +12,7 @@ CHANNEL_ID = '본인 디스코드 서버의 채널 아이디'
 
 def load_dataframe():
     return pd.read_csv("아모레크롤링_스킨케어_완료.csv")
-# 미리 모델 로드
+    
 model_name = "noahkim/KoT5_news_summarization"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
@@ -178,7 +178,7 @@ class MyClient(discord.Client):
         for idx, matching_title in enumerate(matching_titles, start=1):
             response += f"{idx}. {matching_title}\n"
 
-        max_len = 2000  # Discord's max message length
+        max_len = 2000
         if len(response) > max_len:
             for i in range(0, len(response), max_len):
                 await message.channel.send(response[i:i + max_len])
