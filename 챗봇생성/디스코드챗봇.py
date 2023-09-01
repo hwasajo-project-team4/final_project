@@ -1,3 +1,4 @@
+
 import discord
 from datetime import datetime
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -5,8 +6,8 @@ from konlpy.tag import Okt
 from collections import Counter
 import asyncio
 import pandas as pd
-TOKEN = '본인의 챗봇 토큰"
-CHANNEL_ID = '본인의 채널 아이디"
+TOKEN = '본인의 챗봇 토큰'
+CHANNEL_ID = '본인 디스코드 서버의 채널 아이디'
 
 
 def load_dataframe():
@@ -25,7 +26,15 @@ class MyClient(discord.Client):
 
         channel = self.get_channel(int(CHANNEL_ID))
         if channel:
-            await channel.send("종료하려면 q 입력")
+            introduction_message = (
+                "환영합니다! 저는 여러분을 도와드릴 챗봇입니다.\n"
+                "저의 기능은 다음과 같습니다:\n"
+                "- `!chatbot`: 상품 리뷰 요약\n"
+                "- `!keyword`: 키워드 추출\n"
+                "- `ping`: 봇 상태 확인\n"
+                "종료하려면 'q'를 입력하세요."
+            )
+            await channel.send(introduction_message)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
