@@ -6,8 +6,8 @@ from konlpy.tag import Okt
 from collections import Counter
 import asyncio
 import pandas as pd
-TOKEN = 'MTE0NzAyNjMyODM3NDIzNTI5Ng.G_zJ3k.8d8BPq6WOVCz1xmNgVoHx9K1Yoqa1sZ_xgdnNI'
-CHANNEL_ID = '1147030430458060910'
+TOKEN = '본인의 봇에맞는 토큰'
+CHANNEL_ID = '본인이 만든 대화 채널(서버 만들면 디폴드로 만들어진다.)'
 
 def load_dataframe():
     return pd.read_csv("아모레크롤링_스킨케어_완료.csv")
