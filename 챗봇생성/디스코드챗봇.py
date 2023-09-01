@@ -1,4 +1,3 @@
-
 import discord
 from datetime import datetime
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -6,8 +5,8 @@ from konlpy.tag import Okt
 from collections import Counter
 import asyncio
 import pandas as pd
-TOKEN = '본인의 봇 토큰'
-CHANNEL_ID = '본인의 서버를 만들고 난 후 생기는 기본 채팅 채널의 아이디'
+TOKEN = '본인의 챗봇 토큰"
+CHANNEL_ID = '본인의 채널 아이디"
 
 
 def load_dataframe():
@@ -166,36 +165,50 @@ class MyClient(discord.Client):
             await message.channel.send("최소 두 글자 이상의 쿼리를 입력해주세요.")
             return
 
-
         response = "일치하는 상품명 목록:\n"
         for idx, matching_title in enumerate(matching_titles, start=1):
             response += f"{idx}. {matching_title}\n"
-        
-        await message.channel.send(response)
+
+        max_len = 2000  # Discord's max message length
+        if len(response) > max_len:
+            for i in range(0, len(response), max_len):
+                await message.channel.send(response[i:i + max_len])
+        else:
+            await message.channel.send(response)
         
         def check(m):
             return m.author == message.author and m.channel == message.channel
 
         try:
-            msg = await self.wait_for('message', timeout=30.0, check=check)
-            if msg.content == 'q':  
-                await msg.channel.send('대화를 종료합니다.')
-                await self.close()  
-                return
+            while True:
+                msg = await self.wait_for('message', timeout=30.0, check=check)
+                if msg.content == 'q':  
+                    await msg.channel.send('대화를 종료합니다.')
+                    await self.close()  
+                    return
             
-            selected_idx = int(msg.content) - 1
-            selected_title = matching_titles[selected_idx]
-            
-            reviews = df[df['상품명'] == selected_title]['리뷰'].to_list()
-            reviews_text = ' '.join(reviews)
-            
-            inputs = tokenizer(reviews_text, return_tensors="pt", max_length=1024, truncation=True)
-            summary_ids = model.generate(inputs["input_ids"], num_beams=10, min_length=50, max_length=150, early_stopping=True)
-            summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+                try:
+                    selected_idx = int(msg.content) - 1
+                except ValueError:
+                    await message.channel.send("숫자만 입력해 주세요.")
+                    continue
 
-            self.keyword_mode_per_user[message.author.id] = False
+                if 0 <= selected_idx < len(matching_titles):
+                    selected_title = matching_titles[selected_idx]
             
-            await message.channel.send(f"{selected_title}의 전체 리뷰 요약: {summary}")
+                    reviews = df[df['상품명'] == selected_title]['리뷰'].to_list()
+                    reviews_text = ' '.join(reviews)
+                    
+                    inputs = tokenizer(reviews_text, return_tensors="pt", max_length=1024, truncation=True)
+                    summary_ids = model.generate(inputs["input_ids"], num_beams=6, min_length=50, max_length=150, early_stopping=True)
+                    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+
+                    self.keyword_mode_per_user[message.author.id] = False
+                    
+                    await message.channel.send(f"{selected_title}의 전체 리뷰 요약: {summary}")
+                    break
+                else:
+                    await message.channel.send(f"입력하신 숫자({selected_idx + 1}) 번째의 제품은 없습니다.")
 
         except asyncio.TimeoutError:
             await message.channel.send('시간이 초과되었습니다.')
@@ -221,25 +234,39 @@ class MyClient(discord.Client):
         response = "일치하는 상품명 목록:\n"
         for idx, matching_title in enumerate(matching_titles, start=1):
             response += f"{idx}. {matching_title}\n"
-        
-        await message.channel.send(response)
+
+        max_len = 2000  # Discord's max message length
+        if len(response) > max_len:
+            for i in range(0, len(response), max_len):
+                await message.channel.send(response[i:i + max_len])
+        else:
+            await message.channel.send(response)
 
         def check(m):
             return m.author == message.author and m.channel == message.channel
 
         try:
-            msg = await self.wait_for('message', timeout=30.0, check=check)
-            if msg.content == 'q':  
-                await msg.channel.send('대화를 종료합니다.')
-                await self.close()  
-                return
+            while True:
+                msg = await self.wait_for('message', timeout=30.0, check=check)
+                if msg.content == 'q':  
+                    await msg.channel.send('대화를 종료합니다.')
+                    await self.close()  
+                    return
             
-            selected_idx = int(msg.content) - 1
-            selected_title = matching_titles[selected_idx]
+                try:
+                    selected_idx = int(msg.content) - 1
+                except ValueError:
+                    await message.channel.send("숫자만 입력해 주세요.")
+                    continue
 
-            self.keyword_mode_per_user[message.author.id] = False
-
-            await self.keyword(message, selected_title)
+            
+                if 0 <= selected_idx < len(matching_titles):
+                    selected_title = matching_titles[selected_idx]
+                    self.keyword_mode_per_user[message.author.id] = False
+                    await self.keyword(message, selected_title)
+                    break
+                else:
+                    await message.channel.send(f"입력하신 숫자({selected_idx + 1}) 번째의 제품은 없습니다.")
 
         except asyncio.TimeoutError:
             await message.channel.send('시간이 초과되었습니다.')
