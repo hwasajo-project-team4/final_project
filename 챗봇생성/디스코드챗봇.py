@@ -58,7 +58,7 @@ class MyClient(discord.Client):
             return
 
         if message.content.startswith('!chatbot') or message.content.startswith('!keyword'):
-            self.keyword_mode_per_user[message.author.id] = True  # <-- 여기 추가
+            self.keyword_mode_per_user[message.author.id] = True 
 
         if message.content == 'q':  
             await message.channel.send('대화를 종료합니다.')
@@ -82,7 +82,7 @@ class MyClient(discord.Client):
                     matching_titles = self.find_matching_titles(title)
                     if len(matching_titles) == 0:
                         await message.channel.send("해당 상품이 없습니다. 상품명을 똑바로 입력해 주세요.")
-                        continue  # Continue the loop to keep asking for a valid product name.
+                        continue 
                     else:
                         await self.chatbot(message, title)
                         break
@@ -108,7 +108,7 @@ class MyClient(discord.Client):
                     matching_titles = self.find_matching_titles(title)
                     if len(matching_titles) == 0:
                         await message.channel.send("해당 상품이 없습니다. 상품명을 똑바로 입력해 주세요.")
-                        continue  # Continue the loop to keep asking for a valid product name.
+                        continue 
                     else:
                         await self.keyword_bot(message, title)
                         break
@@ -244,7 +244,7 @@ class MyClient(discord.Client):
         for idx, matching_title in enumerate(matching_titles, start=1):
             response += f"{idx}. {matching_title}\n"
 
-        max_len = 2000  # Discord's max message length
+        max_len = 2000
         if len(response) > max_len:
             for i in range(0, len(response), max_len):
                 await message.channel.send(response[i:i + max_len])
