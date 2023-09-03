@@ -1,3 +1,4 @@
+
 import discord
 from datetime import datetime
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -6,8 +7,8 @@ from collections import Counter
 import asyncio
 import pandas as pd
 import time
-TOKEN = '본인의 디스코드봇 토큰'
-CHANNEL_ID = '본인의 서버 채널 아이디'
+TOKEN = '본인의 디스코드 챗봇 토큰'
+CHANNEL_ID = '본인의 서버의 채널 아이디'
 
 
 def load_dataframe():
@@ -53,7 +54,7 @@ class MyClient(discord.Client):
             try:
                 msg = await self.wait_for('message', timeout=30.0, check=lambda m: m.author == message.author and m.channel == message.channel)
                 
-                if msg.content == 'q' or '!quit' or 'quit':
+                if msg.content in ['q', '!quit', 'quit']:
                     await msg.channel.send('대화를 종료합니다.')
                     await self.close()
                     return None
@@ -87,10 +88,6 @@ class MyClient(discord.Client):
         if message.content.startswith('!review') or message.content.startswith('!keyword'):
             self.keyword_mode_per_user[message.author.id] = True
 
-        if message.content == 'q' or '!quit' or 'quit':  
-            await message.channel.send('대화를 종료합니다.')
-            await self.close()  
-            return
         
         if self.timeout_mode_per_user.get(message.author.id, False):
             return
@@ -113,6 +110,11 @@ class MyClient(discord.Client):
             return
 
 
+        elif message.content in ['q', '!quit', 'quit']:
+            await message.channel.send('대화를 종료합니다.')
+            await self.close()
+            return
+        
         elif message.content == 'ping':
             await message.channel.send('pong {0.author.mention}'.format(message))
         else:
@@ -187,7 +189,7 @@ class MyClient(discord.Client):
         try:
             while True:
                 msg = await self.wait_for('message', timeout=30.0, check=check)
-                if msg.content == 'q' or '!quit' or 'quit':  
+                if msg.content in ['q', '!quit', 'quit']:   
                     await msg.channel.send('대화를 종료합니다.')
                     await self.close()  
                     return
@@ -265,7 +267,7 @@ class MyClient(discord.Client):
         try:
             while True:
                 msg = await self.wait_for('message', timeout=30.0, check=check)
-                if msg.content == 'q' or '!quit' or 'quit':  
+                if msg.content in ['q', '!quit', 'quit']:  
                     await msg.channel.send('대화를 종료합니다.')
                     await self.close()  
                     return
@@ -327,7 +329,7 @@ class MyClient(discord.Client):
             "- `!review`: 상품 리뷰 요약\n"
             "- `!keyword`: 키워드 추출\n"
             "- `ping`: 봇 상태 확인\n"
-            "종료하려면 'q'를 입력하세요."
+            "종료하려면 'q' 또는 'quit' 또는 '!quit'를 입력하세요."
         )
         await channel.send(introduction_message)
  
