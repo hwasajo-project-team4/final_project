@@ -182,5 +182,6 @@ if st.sidebar.checkbox("고객타입 입력"):
         recommend_list = recommend_products_for_user(age,gender,skintype,skintrouble)
         for rec in recommend_list:
             st.write(rec)
+        selected_option = st.selectbox("궁금한 제품을 선택하세요", recommend_list)
 
 
