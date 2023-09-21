@@ -210,3 +210,19 @@ if st.sidebar.checkbox("고객타입 입력"):
         plt.ylabel('number of review')
         plt.grid(True)
         st.pyplot(plt)
+
+        st.subheader(f"{selected_option}의 별점 동향입니다.")
+        selected_product_reviews = df[df['상품명'] == selected_option]
+        selected_product_reviews['리뷰작성날짜'] = pd.to_datetime(selected_product_reviews['리뷰작성날짜'])
+        one_year_ago = pd.Timestamp.now() - pd.DateOffset(years=1)
+        recent_reviews = selected_product_reviews[selected_product_reviews['리뷰작성날짜'] > one_year_ago]
+        star_rating_trend = recent_reviews.groupby(recent_reviews['리뷰작성날짜'].dt.to_period("M"))['별점'].mean().reset_index(name='평균별점')
+        star_rating_trend['리뷰작성날짜'] = star_rating_trend['리뷰작성날짜'].dt.to_timestamp()
+        plt.figure(figsize=(10, 6))
+        plt.plot(star_rating_trend['리뷰작성날짜'], star_rating_trend['평균별점'], marker='o', color='orange')
+        plt.title('star_rating trend')
+        plt.xlabel('date of star_rating')
+        plt.ylabel('average star_rating')
+        plt.ylim(0, 5)
+        plt.grid(True)
+        st.pyplot(plt)
