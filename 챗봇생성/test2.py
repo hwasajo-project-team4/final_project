@@ -183,5 +183,25 @@ if st.sidebar.checkbox("고객타입 입력"):
         for rec in recommend_list:
             st.write(rec)
         selected_option = st.selectbox("궁금한 제품을 선택하세요", recommend_list)
+        if selected_option == recommend_list[0]:
+            st.subheader(f"{recommend_list[0]}의 리뷰 동향입니다.")
+            # 상품에 대한 리뷰만 필터링
+            selected_product_reviews = df[df['상품명'] == recommend_list[0]]
+            # '리뷰작성날짜' 컬럼을 datetime 형태로 변환
+            selected_product_reviews['리뷰작성날짜'] = pd.to_datetime(selected_product_reviews['리뷰작성날짜'])
+            # 최근 1년 동안의 리뷰만 필터링
+            one_year_ago = pd.Timestamp.now() - pd.DateOffset(years=1)
+            recent_reviews = selected_product_reviews[selected_product_reviews['리뷰작성날짜'] > one_year_ago]
+            # 리뷰 작성 날짜별로 리뷰 수 계산
+            review_trend = recent_reviews.groupby(recent_reviews['리뷰작성날짜'].dt.to_period("M")).size().reset_index(name='리뷰수')
+            review_trend['리뷰작성날짜'] = review_trend['리뷰작성날짜'].dt.to_timestamp()
+            # 그래프로 표현
+            plt.figure(figsize=(10, 6))
+            plt.plot(review_trend['리뷰작성날짜'], review_trend['리뷰수'], marker='o')
+            plt.title('review trend')
+            plt.xlabel('date of review')
+            plt.ylabel('number of review')
+            plt.grid(True)
+            st.pyplot(plt)
 
 
