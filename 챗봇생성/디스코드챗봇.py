@@ -7,6 +7,7 @@ from collections import Counter
 import asyncio
 import pandas as pd
 import time
+
 TOKEN = '본인의 디스코드 챗봇 토큰'
 CHANNEL_ID = '본인의 서버의 채널 아이디'
 
