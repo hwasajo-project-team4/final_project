@@ -8,7 +8,8 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from surprise import Dataset, Reader, SVD, accuracy
 from collections import defaultdict
-
+import wordcloud
+from konlpy.tag import Okt
 
 def reset_seeds(seed):
     random.seed(seed)
@@ -160,7 +161,29 @@ def recommend_products_for_user(age, gender, skin_type, skin_trouble, top_n=5):
         user_recommendations = user_recommendations_with_rated.get(virtual_user, [])
         recommended_products = [product_name for product_name, _ in user_recommendations[:top_n]]
         return recommended_products
+
+def generate_wordcloud(texts):
+    stopwords = ['이', '그', '저', '것', '들', '등', '을', '를', '에', '와', '과', '의', '로', '으로', '만', '에서', '게', '으로써',
+             '처럼', '하고', '도', '면', '못', '좋', '같아요', '네요', '는데', '다가', '아요', '어요', '습니다', '면서', '많이', '너무',
+             '정말', '듯', '때', '고', '게다가', '죠', '거든요', '요', '인데', '더', '해', '해서', '든', '뭐', '하며', '된', '걸', '좀',
+             '주', '거', '몇', '또', '한', '되', '같', '보이', '나', '이나', '대', '하', '잘', '되어', '아', '했', '건', '해도', '해보',
+             '했어', '하    는', '한다', '하면', '해야', '하게', '하자', '하세', '하고', '하느', '하려', '하였', '하면', '하겠', '하셔', '하십',
+             '하세요', '하다가', '사용', '제품', '구매', '피부', '느낌', '효과', '가격', '만족', '구입', '배송', '용량', '가격', '행사', '항상', 
+             '구매', '사용', '제품', '처음', '계속', '조금', '생각', '보고', '정도']
+    okt = Okt()
+
+    # 리뷰에서 명사 추출
+    words = []
+    for text in texts:
+        nouns = okt.nouns(text)
+        nouns = [word for word in nouns if word not in stopwords]
+        words.extend(nouns)
     
+    # 워드클라우드 생성
+    wc = wordcloud.WordCloud(font_path='C:\Windows\Fonts\malgun.ttf', background_color='white', width=800, height=400)
+    wc.generate(' '.join(words))
+    
+    return wc
 
 st.sidebar.title('Cosmetic Recommend')
 st.sidebar.header('추천받고 싶은 유형을 선택하세요')
@@ -226,3 +249,12 @@ if st.sidebar.checkbox("고객타입 입력"):
         plt.ylim(0, 5)
         plt.grid(True)
         st.pyplot(plt)
+
+        # 선택한 제품의 리뷰 데이터 가져오기
+        selected_product_reviews = df[df['상품명'] == selected_option]
+        
+        # 리뷰 텍스트를 기반으로 워드클라우드 생성
+        wc = generate_wordcloud(selected_product_reviews['리뷰'].tolist())
+        
+        # 워드클라우드 표시
+        st.image(wc.to_array())
