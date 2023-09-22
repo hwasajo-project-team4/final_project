@@ -10,6 +10,7 @@ from surprise import Dataset, Reader, SVD, accuracy
 from collections import defaultdict
 import wordcloud
 from konlpy.tag import Okt
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 def reset_seeds(seed):
     random.seed(seed)
@@ -169,7 +170,7 @@ def generate_wordcloud(texts):
              '주', '거', '몇', '또', '한', '되', '같', '보이', '나', '이나', '대', '하', '잘', '되어', '아', '했', '건', '해도', '해보',
              '했어', '하    는', '한다', '하면', '해야', '하게', '하자', '하세', '하고', '하느', '하려', '하였', '하면', '하겠', '하셔', '하십',
              '하세요', '하다가', '사용', '제품', '구매', '피부', '느낌', '효과', '가격', '만족', '구입', '배송', '용량', '가격', '행사', '항상', 
-             '구매', '사용', '제품', '처음', '계속', '조금', '생각', '보고', '정도', '스']
+             '구매', '사용', '제품', '처음', '계속', '조금', '생각', '보고', '정도']
     okt = Okt()
 
     # 리뷰에서 명사 추출
@@ -185,14 +186,49 @@ def generate_wordcloud(texts):
     
     return wc
 
+def chatbot_with_recommendation(df, selected_title):
+    model_name = "noahkim/KoT5_news_summarization"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    
+    reviews = df[df['상품명'] == selected_title]['리뷰'].to_list()
+    reviews_text = ' '.join(reviews)
+    
+    inputs = tokenizer(reviews_text, return_tensors="pt", max_length=1024, truncation=True)
+    summary_ids = model.generate(inputs["input_ids"], num_beams=4, min_length=40, max_length=200, early_stopping=True)
+    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    
+    reviews = df[df['상품명'] == selected_title]
+    age = reviews['나이'].mode().values[0]
+    types = reviews['피부타입'].mode().values[0]
+    trouble = reviews['피부트러블'].mode().values[0]
+    product_info = f"이 제품은 {age}, {types}이면서 {trouble} 고민을 가진 사람들이 많이 쓰는 제품입니다."
+    
+    return summary, product_info
+
 st.sidebar.title('Cosmetic Recommend')
 st.sidebar.header('추천받고 싶은 유형을 선택하세요')
 if st.sidebar.checkbox("상품명 입력"):
-    product = st.sidebar.text_input(label="상품명", value="default value")
-    if st.sidebar.button("추천받기"):
-        st.header(f"{product}와 유사한 제품입니다.")
-        selected_product = st.selectbox('궁금한 제품을 선택하세요.', ['1.제품','2.제품','3.제품','4.제품','5.제품'])
-        st.write('선택하신 제품은 {}입니다.'.format(selected_product))
+    title = st.sidebar.text_input(label="상품명", value="default value")
+    if title:
+        keywords = title.split()
+        condition = lambda x: all(keyword.lower() in x.lower() for keyword in keywords)
+        matching_titles = [t for t in df['상품명'].unique().tolist() if condition(t)]
+        
+        if not matching_titles:
+            st.warning("해당 상품이 없습니다.")
+        else:
+            st.subheader("\n일치하는 상품명 목록:")
+            for idx, matching_title in enumerate(matching_titles, start=1):
+                st.text(f"{idx}. {matching_title}")
+
+            selected_idx = st.number_input("상품을 선택하세요 (번호 입력):", min_value=1, max_value=len(matching_titles), value=1)
+            selected_title = matching_titles[selected_idx - 1]
+            
+            summary, product_info = chatbot_with_recommendation(df, selected_title)
+            st.subheader(f"{selected_title}의 전체 리뷰 요약:")
+            st.write(summary)
+            st.write(product_info)
 
 
 if st.sidebar.checkbox("고객타입 입력"):
