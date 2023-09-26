@@ -27,8 +27,9 @@ new_df['키워드'].fillna("nan")
 
 skincare = pd.read_csv("아모레크롤링_스킨케어.csv")
 
-TOKEN = 'MTE0NzAyNjMyODM3NDIzNTI5Ng.GSmtuz.O0CmHn89VeDiWG0rRwfJCh1gPQSqOQi-qBcCM0'
-CHANNEL_ID = '1147160314962518016'
+TOKEN = '본인의 디스코드 챗봇 토큰'
+CHANNEL_ID = '본인의 서버의 채널 아이디'
+
 
 
 model_name = "noahkim/KoT5_news_summarization"
