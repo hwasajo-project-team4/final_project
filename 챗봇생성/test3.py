@@ -203,7 +203,7 @@ def recommend_products_for_user(age, gender, skin_type, skin_trouble, top_n=5, d
         recommended_products = [product_name for product_name, _ in user_recommendations[:top_n]]
         return recommended_products
 
-def generate_wordcloud(texts):
+def generate_wordcloud(texts, product_name):
     stopwords = ['이', '그', '저', '것', '들', '등', '을', '를', '에', '와', '과', '의', '로', '으로', '만', '에서', '게', '으로써',
              '처럼', '하고', '도', '면', '못', '좋', '같아요', '네요', '는데', '다가', '아요', '어요', '습니다', '면서', '많이', '너무',
              '정말', '듯', '때', '고', '게다가', '죠', '거든요', '요', '인데', '더', '해', '해서', '든', '뭐', '하며', '된', '걸', '좀',
@@ -211,6 +211,8 @@ def generate_wordcloud(texts):
              '했어', '하    는', '한다', '하면', '해야', '하게', '하자', '하세', '하고', '하느', '하려', '하였', '하면', '하겠', '하셔', '하십',
              '하세요', '하다가', '사용', '제품', '구매', '피부', '느낌', '효과', '가격', '만족', '구입', '배송', '용량', '가격', '행사', '항상', 
              '구매', '사용', '제품', '처음', '계속', '조금', '생각', '보고', '정도']
+    product_name_list = product_name.split(" ")
+    stopwords.extend(product_name_list)
     okt = Okt()
 
     # 리뷰에서 명사 추출
@@ -362,7 +364,7 @@ if st.sidebar.checkbox("고객타입 입력"):
         plt.title('review trend')
         plt.xlabel('date of review')
         plt.ylabel('number of review')
-        plt.grid(True)
+        plt.grid(True,axis='y')
         st.pyplot(plt)
 
         st.subheader(f"{selected_option}의 별점 동향입니다.")
@@ -385,7 +387,7 @@ if st.sidebar.checkbox("고객타입 입력"):
         selected_product_reviews = df[df['상품명'] == selected_option]
         
         # 리뷰 텍스트를 기반으로 워드클라우드 생성
-        wc = generate_wordcloud(selected_product_reviews['리뷰'].tolist())
+        wc = generate_wordcloud(selected_product_reviews['리뷰'].tolist(), selected_option)
         
         # 워드클라우드 표시
         st.image(wc.to_array())
