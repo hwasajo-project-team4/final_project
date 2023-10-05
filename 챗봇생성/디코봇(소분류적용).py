@@ -372,50 +372,52 @@ class MyClient(discord.Client):
                     await message.channel.send(user_info)
 
                     # 비슷한 상품을 추천할지 물어보는 부분
-                    await message.channel.send("비슷한 상품을 보여드릴까요? (Y/N)")
+                    while True:
+                        await message.channel.send("비슷한 상품을 보여드릴까요? (Y/N)")
+                        
+                        try:
+                            show_similar_msg = await self.wait_for('message', timeout=60.0, check=check)
+                            user_response = show_similar_msg.content.lower()
+                        except asyncio.TimeoutError:
+                            user_response = 'n' 
                     
-                    try:
-                        show_similar_msg = await self.wait_for('message', timeout=60.0, check=check)
-                        user_response = show_similar_msg.content.lower()
-                    except asyncio.TimeoutError:
-                        user_response = 'n' 
-                    
-                    if user_response == 'y':
-                        input_keywords_str = new_df[new_df['상품명'] == selected_title]['키워드'].iloc[0]
-                        if pd.isna(input_keywords_str):  # 이 부분을 추가
-                            await message.channel.send("해당 상품의 키워드 정보가 없습니다.")
-                            break
-                        input_keywords = input_keywords_str.split(", ")
+                        if user_response == 'y':
+                            input_keywords_str = new_df[new_df['상품명'] == selected_title]['키워드'].iloc[0]
+                            if pd.isna(input_keywords_str):  # 이 부분을 추가
+                                await message.channel.send("해당 상품의 키워드 정보가 없습니다.")
+                                break
+                            input_keywords = input_keywords_str.split(", ")
+                            
+                            similar_products = {}
+                            for _, row in new_df.iterrows():
+                                product = row['상품명']
+                                keywords_str = row['키워드']
+                                if product == selected_title or pd.isna(keywords_str):
+                                    continue
+                                keywords = keywords_str.split(", ")
+                                matching_keywords = set(input_keywords).intersection(set(keywords))
+                                if matching_keywords:
+                                    similar_products[product] = [keyword for keyword in matching_keywords]
+                            
+                            sorted_similar_products = sorted(similar_products.items(), key=lambda x: len(x[1]), reverse=True)[:5]
+                            
+                            similar_response = "비슷한 제품:\n"
+                            for product, matching_keywords in sorted_similar_products:
+                                matching_keywords_str = ', '.join(matching_keywords)
+                                similar_response += f"{product} (일치하는 키워드: {matching_keywords_str})\n"
+                            
+                            await message.channel.send(similar_response)
+                            return
                         
-                        similar_products = {}
-                        for _, row in new_df.iterrows():
-                            product = row['상품명']
-                            keywords_str = row['키워드']
-                            if product == selected_title or pd.isna(keywords_str):
-                                continue
-                            keywords = keywords_str.split(", ")
-                            matching_keywords = set(input_keywords).intersection(set(keywords))
-                            if matching_keywords:
-                                similar_products[product] = [keyword for keyword in matching_keywords]
-                        
-                        sorted_similar_products = sorted(similar_products.items(), key=lambda x: len(x[1]), reverse=True)[:5]
-                        
-                        similar_response = "비슷한 제품:\n"
-                        for product, matching_keywords in sorted_similar_products:
-                            matching_keywords_str = ', '.join(matching_keywords)
-                            similar_response += f"{product} (일치하는 키워드: {matching_keywords_str})\n"
-                        
-                        await message.channel.send(similar_response)
-                    elif user_response == 'n':
-                        await message.channel.send("비슷한 상품 추천을 건너뜁니다.")
-                    else:
-                        await message.channel.send("올바르지 않은 입력입니다. 비슷한 상품 추천을 건너뜁니다.")
-                    break
+                        elif user_response == 'n':
+                            await message.channel.send("비슷한 상품 추천을 건너뜁니다.")
+                            return
+                        else:
+                            await message.channel.send("올바르지 않은 입력입니다. 다시 입력해주세요.")
                 else:
                     await message.channel.send(f"입력하신 숫자({selected_idx + 1}) 번째의 제품은 없습니다.")
 
         except asyncio.TimeoutError:
-            self.timeout_mode_per_user[message.author.id] = True
             await message.channel.send('시간이 초과되었습니다. 상품명을 다시 입력해 주세요.')
 
             new_title = await self.get_product_title(message) 
@@ -478,7 +480,6 @@ class MyClient(discord.Client):
                     await message.channel.send(f"입력하신 숫자({selected_idx + 1}) 번째의 제품은 없습니다.")
 
         except asyncio.TimeoutError:
-            self.timeout_mode_per_user[message.author.id] = True
             await message.channel.send('시간이 초과되었습니다. 상품명을 다시 입력해 주세요.')
 
             new_title = await self.get_product_title(message) 
@@ -512,19 +513,17 @@ class MyClient(discord.Client):
 
         try:
             response = await self.wait_for('message', timeout=30.0, check=check)
-            if response.content in ['q', '!quit', 'quit']: 
-                return None
             return response.content
         except asyncio.TimeoutError:
             await message.channel.send("응답 시간이 초과되었습니다. 처음부터 다시 시도해주세요.\n - `!review`: 상품 리뷰 요약\n- `!keyword`: 키워드 추출\n- `!recommand`: 추천\n종료하려면 'q' 또는 'quit' 또는 '!quit'를 입력하세요.")
             return None
 
-
     async def recommend_chatbot(self, skincare, new_df, message):       
         while True:
             await message.channel.send("\n1. 제품 추천 받기\n2. 상품 리뷰 확인하기\n3. 종료")
             response = await self.wait_for_user_response(message)
-            if not response:  # response가 None인 경우 (종료 명령어를 입력한 경우)
+            if response in ['q', '!quit', 'quit']:
+                await message.channel.send("대화를 종료합니다.")
                 return
 
             if response == '1':
