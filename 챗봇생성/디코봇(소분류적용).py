@@ -13,12 +13,9 @@ import matplotlib.pyplot as plt
 import os
 from surprise import Dataset, Reader, SVD, accuracy
 from sklearn.model_selection import train_test_split
-from surprise import Dataset, Reader, SVD, accuracy
 from collections import defaultdict
 
 mecab = Mecab()
-#
-
 
 
 new_df = pd.read_csv("키워드추출.csv")
@@ -27,9 +24,8 @@ new_df['키워드'].fillna("nan")
 
 skincare = pd.read_csv("아모레크롤링_스킨케어.csv")
 
-TOKEN = '본인의 디스코드 챗봇 토큰'
-CHANNEL_ID = '본인의 서버의 채널 아이디'
-
+TOKEN = '본인의 디스코드봇 토큰'
+CHANNEL_ID = '본인의 디스코드 채널 ID'
 
 
 model_name = "noahkim/KoT5_news_summarization"
@@ -171,7 +167,7 @@ def recommend_products_by_category(df, category, top_n=5):
 class MyClient(discord.Client):
     async def on_ready(self):
         print('Logged on as {0}!'.format(self.user))
-        await self.change_presence(status=discord.Status.online, activity=discord.Game("대기중"))
+        await self.change_presence(status=discord.Status.online, activity=discord.Game("구동중"))
 
         channel = self.get_channel(int(CHANNEL_ID))
         if channel:
@@ -197,7 +193,7 @@ class MyClient(discord.Client):
     async def get_product_title(self, message):
         while True:
             try:
-                msg = await self.wait_for('message', timeout=30.0, check=lambda m: m.author == message.author and m.channel == message.channel)
+                msg = await self.wait_for('message', timeout=60.0, check=lambda m: m.author == message.author and m.channel == message.channel)
                 
                 if msg.content in ['q', '!quit', 'quit']:
                     await msg.channel.send('대화를 종료합니다.')
@@ -341,7 +337,7 @@ class MyClient(discord.Client):
 
         try:
             while True:
-                msg = await self.wait_for('message', timeout=30.0, check=check)
+                msg = await self.wait_for('message', timeout=60.0, check=check)
                 if msg.content in ['q', '!quit', 'quit']:   
                     await msg.channel.send('대화를 종료합니다.')
                     await self.close()  
@@ -365,12 +361,21 @@ class MyClient(discord.Client):
 
                     
                     await message.channel.send(f"{selected_title}의 전체 리뷰 요약: {summary}")
+                    # 선택된 상품의 데이터 추출
+                    reviews_df = skincare[skincare['상품명'] == selected_title]
 
-                        # 비슷한 상품을 추천할지 물어보는 부분
+                    # 상품에 대한 대표적인 사용자의 특성 정보 추출
+                    age = reviews_df['나이'].mode().values[0]
+                    types = reviews_df['피부타입'].mode().values[0]
+                    trouble = reviews_df['피부트러블'].mode().values[0]
+                    user_info = f"\n이 제품은 {age}, {types}이면서 {trouble} 고민을 가진 사람들이 많이 쓰는 제품입니다."
+                    await message.channel.send(user_info)
+
+                    # 비슷한 상품을 추천할지 물어보는 부분
                     await message.channel.send("비슷한 상품을 보여드릴까요? (Y/N)")
                     
                     try:
-                        show_similar_msg = await self.wait_for('message', timeout=30.0, check=check)
+                        show_similar_msg = await self.wait_for('message', timeout=60.0, check=check)
                         user_response = show_similar_msg.content.lower()
                     except asyncio.TimeoutError:
                         user_response = 'n' 
@@ -424,7 +429,6 @@ class MyClient(discord.Client):
 
 
     async def keyword_bot(self, message, title):
-        
         keywords = title.split()
         condition = lambda x: all(keyword.lower() in x.lower() for keyword in keywords)
         matching_titles = [t for t in new_df['상품명'].unique().tolist() if condition(t)]
@@ -468,8 +472,6 @@ class MyClient(discord.Client):
                 if 0 <= selected_idx < len(matching_titles):
                     selected_title = matching_titles[selected_idx]
                     await self.keyword(message, selected_title)
-
-                   
 
                     break
                 else:
@@ -559,7 +561,7 @@ class MyClient(discord.Client):
                     break
 
             elif response == '3':
-                await message.channel.send("추천 프로그램을 종료합니다. 완전히 종료하려면 q를 한번 더 입력해서 완전히 종료하세요. 아니라면\n - `!review`: 상품 리뷰 요약\n- `!keyword`: 키워드 추출\n- `!recommand`: 추천")
+                await message.channel.send("추천 프로그램을 종료합니다. 완전히 종료하려면 q를 한번 더 입력해서 완전히 종료하세요. 아니라면 다시 아래 명령어들을 보고 명령어를 입력하세요.\n - `!review`: 상품 리뷰 요약\n- `!keyword`: 키워드 추출\n- `!recommand`: 추천")
                 return
             else:
                 await message.channel.send("올바른 선택지를 입력하세요.")
